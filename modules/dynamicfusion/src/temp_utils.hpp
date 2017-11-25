@@ -1,6 +1,6 @@
 #pragma once
 
-#include "cuda.h"
+//#include "cuda.h"
 #include "kernel_containers.hpp"
 
 namespace kfusion
@@ -8,21 +8,6 @@ namespace kfusion
     namespace device
     {
         template <class T> __kf_hdevice__ void swap(T& a, T& b) { T c(a); a=b; b=c; }
-
-        template<typename T> struct numeric_limits;
-
-        template<> struct numeric_limits<float>
-        {
-            __kf_device__ static float quiet_NaN() { return __int_as_float(0x7fffffff); /*CUDART_NAN_F*/ };
-            __kf_device__ static float epsilon() { return 1.192092896e-07f/*FLT_EPSILON*/; };
-            __kf_device__ static float min() { return 1.175494351e-38f/*FLT_MIN*/; };
-            __kf_device__ static float max() { return 3.402823466e+38f/*FLT_MAX*/; };
-        };
-
-        template<> struct numeric_limits<unsigned short>
-        {
-            __kf_device__ static unsigned short max() { return USHRT_MAX; };
-        };
 
         __kf_device__ float dot(const float3& v1, const float3& v2)
         {

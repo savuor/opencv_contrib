@@ -7,7 +7,6 @@ target_link_libraries(
         utils_tests
         ${GTEST_BOTH_LIBRARIES}
         ${OpenCV_LIBS}
-        kfusion
 )
 
 target_include_directories(

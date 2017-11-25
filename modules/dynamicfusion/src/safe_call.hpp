@@ -1,6 +1,10 @@
 #pragma once
 
-#include "cuda_runtime_api.h"
+//#include "cuda_runtime_api.h"
+
+typedef int cudaError_t;
+typedef int cudaStream_t;
+typedef int CUdevice_attribute;
 
 namespace cv{
     namespace kfusion
@@ -21,10 +25,13 @@ namespace cv{
     {
         namespace cuda
         {
-            static inline void ___cudaSafeCall(cudaError_t err, const char *file, const int line, const char *func = "")
+            static inline void ___cudaSafeCall(cudaError_t /* err */, const char * /* file */, const int /* line */, const char * /* func = ""*/)
             {
+                throw "Not implemented";
+                /*
                 if (cudaSuccess != err)
                     error(cudaGetErrorString(err), file, line, func);
+                    */
             }
 
             static inline int divUp(int total, int grain) { return (total + grain - 1) / grain; }

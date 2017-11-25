@@ -1,4 +1,4 @@
-#include <opencv2/dynamicfusion/cuda/precomp.hpp>
+#include "precomp.hpp"
 #include <opencv2/dynamicfusion/types.hpp>
 using namespace cv;
 /**
@@ -42,7 +42,9 @@ void kfusion::cuda::depthBuildPyramid(const Depth& depth, Depth& pyramid, float 
  */
 void kfusion::cuda::waitAllDefaultStream()
 {
+    /*
     cudaSafeCall(cudaDeviceSynchronize());
+    */
 }
 
 /**
@@ -86,10 +88,12 @@ void kfusion::cuda::computePointNormals(const Intr& intr, const Depth& depth, Cl
  * \param dists
  * \param intr
  */
-void kfusion::cuda::computeDists(const Depth& depth, Dists& dists, const Intr& intr)
+void kfusion::cuda::computeDists(const UMat depth, UMat dists, const Intr& intr)
 {
-    dists.create(depth.rows(), depth.cols());
-    device::compute_dists(depth, dists, make_float2(intr.fx, intr.fy), make_float2(intr.cx, intr.cy));
+    CV_Assert(depth.type() == CV_16U);
+    CV_Assert(dists.type() == CV_16U);
+    dists.create(depth.rows, depth.cols, CV_16U);
+    device::compute_dists(depth, dists, float2(intr.fx, intr.fy), float2(intr.cx, intr.cy));
 }
 
 /**

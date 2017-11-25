@@ -7,7 +7,7 @@
 #include "projective_icp.hpp"
 #include "internal.hpp"
 #include <iostream>
-#include "vector_functions.h"
+//#include "vector_functions.h"
 
 namespace cv
 {

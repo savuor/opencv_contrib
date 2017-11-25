@@ -1,16 +1,17 @@
-#include <nanoflann/nanoflann.hpp>
+#include "nanoflann.hpp"
 #include <opencv2/dynamicfusion/utils/dual_quaternion.hpp>
 #include <opencv2/dynamicfusion/utils/knn_point_cloud.hpp>
 #include <opencv2/dynamicfusion/types.hpp>
 #include <opencv2/dynamicfusion/warp_field.hpp>
-#include <opencv2/dynamicfusion/cuda/internal.hpp>
-#include <opencv2/dynamicfusion/cuda/precomp.hpp>
+#include "internal.hpp"
+#include "precomp.hpp"
 #include <opencv2/dynamicfusion/optimisation.hpp>
 
 using namespace cv::kfusion;
+using namespace cv::kfusion::utils;
 using namespace cv;
-std::vector<utils::DualQuaternion<float>> neighbours; //THIS SHOULD BE SOMEWHERE ELSE BUT TOO SLOW TO REINITIALISE
-utils::PointCloud cloud;
+std::vector<DualQuaternion<float>> neighbours; //THIS SHOULD BE SOMEWHERE ELSE BUT TOO SLOW TO REINITIALISE
+PointCloud cloud;
 
 WarpField::WarpField()
 {
@@ -262,17 +263,17 @@ void WarpField::warp(std::vector<Vec3f>& points, std::vector<Vec3f>& normals) co
  * \param weight
  * \return
  */
-utils::DualQuaternion<float> WarpField::DQB(const Vec3f& vertex) const
+DualQuaternion<float> WarpField::DQB(const Vec3f& vertex) const
 {
-    utils::DualQuaternion<float> quaternion_sum;
+    DualQuaternion<float> quaternion_sum;
     for (size_t i = 0; i < KNN_NEIGHBOURS; i++)
         quaternion_sum = quaternion_sum + weighting(out_dist_sqr[ret_index[i]], nodes->at(ret_index[i]).weight) *
                                           nodes->at(ret_index[i]).transform;
 
     auto norm = quaternion_sum.magnitude();
 
-    return utils::DualQuaternion<float>(quaternion_sum.getRotation() / norm.first,
-                                        quaternion_sum.getTranslation() / norm.second);
+    return DualQuaternion<float>(quaternion_sum.getRotation() / norm.first,
+                                 quaternion_sum.getTranslation() / norm.second);
 }
 
 
@@ -282,15 +283,15 @@ utils::DualQuaternion<float> WarpField::DQB(const Vec3f& vertex) const
  * \param weight
  * \return
  */
-utils::DualQuaternion<float> WarpField::DQB(const Vec3f& vertex, double epsilon[KNN_NEIGHBOURS * 6]) const
+DualQuaternion<float> WarpField::DQB(const Vec3f& vertex, double epsilon[KNN_NEIGHBOURS * 6]) const
 {
     if(epsilon == NULL)
     {
         std::cerr<<"Invalid pointer in DQB"<<std::endl;
         exit(-1);
     }
-    utils::DualQuaternion<float> quaternion_sum;
-    utils::DualQuaternion<float> eps;
+    DualQuaternion<float> quaternion_sum;
+    DualQuaternion<float> eps;
     for (size_t i = 0; i < KNN_NEIGHBOURS; i++)
     {
         // epsilon [0:2] is rotation [3:5] is translation
@@ -301,8 +302,8 @@ utils::DualQuaternion<float> WarpField::DQB(const Vec3f& vertex, double epsilon[
 
     auto norm = quaternion_sum.magnitude();
 
-    return utils::DualQuaternion<float>(quaternion_sum.getRotation() / norm.first,
-                                        quaternion_sum.getTranslation() / norm.second);
+    return DualQuaternion<float>(quaternion_sum.getRotation() / norm.first,
+                                 quaternion_sum.getTranslation() / norm.second);
 }
 
 /**

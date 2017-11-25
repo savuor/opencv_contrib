@@ -1,8 +1,9 @@
 #pragma once
 
-#include <opencv2/dynamicfusion/cuda/device_array.hpp>
+#include "device_array.hpp"
 #include <opencv2/viz/vizcore.hpp>
 #include <iosfwd>
+#include <iostream>
 
 struct CUevent_st;
 
@@ -18,15 +19,22 @@ namespace cv
         typedef cv::Affine3f Affine3f;
 
         struct  Intr
-                {
-                        float fx, fy, cx, cy;
+        {
+            float fx, fy, cx, cy;
 
-                Intr ();
-                Intr (float fx, float fy, float cx, float cy);
-                Intr operator()(int level_index) const;
-                };
+            Intr () { }
+            Intr (float fx_, float fy_, float cx_, float cy_) : fx(fx_), fy(fy_), cx(cx_), cy(cy_) { }
+            Intr operator()(int level_index) const
+            {
+                int div = 1 << level_index;
+                return (Intr (fx / div, fy / div, cx / div, cy / div));
+            }
+        };
 
-         std::ostream& operator << (std::ostream& os, const Intr& intr);
+        std::ostream& operator << (std::ostream& os, const Intr& intr)
+        {
+            return os << "([f = " << intr.fx << ", " << intr.fy << "] [cp = " << intr.cx << ", " << intr.cy << "])";
+        }
 
         struct Point
         {
@@ -75,27 +83,44 @@ namespace cv
         inline float deg2rad (float alpha) { return alpha * 0.017453293f; }
 
         struct  ScopeTime
-                {
-                        const char* name;
-                        double start;
-                        ScopeTime(const char *name);
-                        ~ScopeTime();
-                };
+        {
+            const char* name;
+            double start;
+            ScopeTime(const char *name_) : name(name_)
+            {
+                start = (double)cv::getTickCount();
+            }
+            ~ScopeTime()
+            {
+                double time_ms =  ((double)cv::getTickCount() - start)*1000.0/cv::getTickFrequency();
+                std::cout << "Time(" << name << ") = " << time_ms << "ms" << std::endl;
+            }
+        };
 
         struct  SampledScopeTime
-                {
-                        public:
-                        enum { EACH = 33 };
-                        SampledScopeTime(double& time_ms);
-                        ~SampledScopeTime();
-                        private:
-                        double getTime();
-                        SampledScopeTime(const SampledScopeTime&);
-                        SampledScopeTime& operator=(const SampledScopeTime&);
+        {
+        public:
+            enum { EACH = 33 };
 
-                        double& time_ms_;
-                        double start;
-                };
+            SampledScopeTime();
+            SampledScopeTime(double& time_ms) : time_ms_(time_ms)
+            {
+                start = (double)cv::getTickCount();
+            }
+        private:
+            double getTime()
+            {
+                return ((double)cv::getTickCount() - start)*1000.0/cv::getTickFrequency();
+            }
+
+            SampledScopeTime(const SampledScopeTime&);
+            SampledScopeTime& operator=(const SampledScopeTime&);
+
+            ~SampledScopeTime();
+
+            double& time_ms_;
+            double start;
+        };
 
     }
 }

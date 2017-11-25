@@ -7,24 +7,14 @@
 #include <string>
 #include <opencv2/dynamicfusion/utils/dual_quaternion.hpp>
 #include <opencv2/dynamicfusion/utils/quaternion.hpp>
-#include <opencv2/dynamicfusion/cuda/projective_icp.hpp>
-#include <opencv2/dynamicfusion/cuda/tsdf_volume.hpp>
+#include "projective_icp.hpp"
+#include "tsdf_volume.hpp"
 #include <opencv2/dynamicfusion/warp_field.hpp>
 
 namespace cv
 {
     namespace kfusion
     {
-        namespace cuda
-        {
-            int getCudaEnabledDeviceCount();
-            void setDevice(int device);
-            std::string getDeviceName(int device);
-            bool checkIfPreFermiGPU(int device);
-            void printCudaDeviceInfo(int device);
-            void printShortCudaDeviceInfo(int device);
-        }
-
         struct  KinFuParams
         {
             static KinFuParams default_params();
@@ -80,7 +70,11 @@ namespace cv
 
             void reset();
 
-            bool operator()(const cuda::Depth& depth, const cuda::Image& image = cuda::Image());
+            bool operator()(InputArray depth, InputArray image);
+            bool operator()(InputArray depth)
+            {
+                return (*this)(depth, Mat());
+            }
 
             void renderImage(cuda::Image& image, int flags = 0);
             void dynamicfusion(cuda::Depth& depth, cuda::Cloud current_frame, cuda::Normals current_normals);

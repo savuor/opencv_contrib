@@ -1,7 +1,10 @@
 #pragma once
 
+#include <algorithm>
 
 #include "kernel_containers.hpp"
+#include <opencv2/core/cvdef.h>
+
 
 namespace cv
 {
@@ -49,7 +52,7 @@ namespace cv
                             /** \brief Allocates internal buffer in GPU memory. If internal buffer was created before the function recreates it with new size. If new and old sizes are equal it does nothing.
                               * \param sizeBytes_arg: buffer size
                               * */
-                            void create(size_t sizeBytes_arg);
+                            void create(size_t);
 
                             /** \brief Decrements reference counter and releases internal buffer if needed. */
                             void release();
@@ -112,17 +115,19 @@ namespace cv
                     {
                             public:
                             /** \brief Empty constructor. */
-                            DeviceMemory2D();
+                            DeviceMemory2D() : data_(0), step_(0), colsBytes_(0), rows_(0), refcount_(0) {}
 
                             /** \brief Destructor. */
-                            ~DeviceMemory2D();
+                            ~DeviceMemory2D()
+                            { release(); }
 
                             /** \brief Allocates internal buffer in GPU memory
                               * \param rows_arg: number of rows to allocate
                               * \param colsBytes_arg: width of the buffer in bytes
                               * */
-                            DeviceMemory2D(int rows_arg, int colsBytes_arg);
-
+                            DeviceMemory2D(int rows_arg, int colsBytes_arg)
+                                : data_(0), step_(0), colsBytes_(0), rows_(0), refcount_(0)
+                            { create(rows_arg, colsBytes_arg); }
 
                             /** \brief Initializes with user allocated buffer. Reference counting is disabled in this case.
                               * \param rows_arg: number of rows
@@ -130,27 +135,100 @@ namespace cv
                               * \param data_arg: pointer to buffer
                               * \param stepBytes_arg: stride between two consecutive rows in bytes
                               * */
-                            DeviceMemory2D(int rows_arg, int colsBytes_arg, void *data_arg, size_t step_arg);
+                            DeviceMemory2D(int rows_arg, int colsBytes_arg, void *data_arg, size_t step_arg)
+                                :  data_(data_arg), step_(step_arg), colsBytes_(colsBytes_arg), rows_(rows_arg), refcount_(0) {}
 
                             /** \brief Copy constructor. Just increments reference counter. */
-                            DeviceMemory2D(const DeviceMemory2D& other_arg);
+                            DeviceMemory2D(const DeviceMemory2D& other_arg) :
+                                data_(other_arg.data_), step_(other_arg.step_), colsBytes_(other_arg.colsBytes_), rows_(other_arg.rows_), refcount_(other_arg.refcount_)
+                            {
+                                if( refcount_ )
+                                    CV_XADD(refcount_, 1);
+                            }
 
                             /** \brief Assigment operator. Just increments reference counter. */
-                            DeviceMemory2D& operator=(const DeviceMemory2D& other_arg);
+                            DeviceMemory2D& operator=(const DeviceMemory2D& other_arg)
+                            {
+                                if( this != &other_arg )
+                                {
+                                    if( other_arg.refcount_ )
+                                        CV_XADD(other_arg.refcount_, 1);
+                                    release();
+
+                                    colsBytes_ = other_arg.colsBytes_;
+                                    rows_ = other_arg.rows_;
+                                    data_ = other_arg.data_;
+                                    step_ = other_arg.step_;
+
+                                    refcount_ = other_arg.refcount_;
+                                }
+                                return *this;
+                            }
 
                             /** \brief Allocates internal buffer in GPU memory. If internal buffer was created before the function recreates it with new size. If new and old sizes are equal it does nothing.
                                * \param ptr_arg: number of rows to allocate
                                * \param sizeBytes_arg: width of the buffer in bytes
                                * */
-                            void create(int rows_arg, int colsBytes_arg);
+                            void create(int /* rows_arg */, int /* colsBytes_arg */)
+                            {
+                                throw "Not implemented";
+                                /*
+                                if (colsBytes_ == colsBytes_arg && rows_ == rows_arg)
+                                    return;
+
+                                if( rows_arg > 0 && colsBytes_arg > 0)
+                                {
+                                    if( data_ )
+                                        release();
+
+                                    colsBytes_ = colsBytes_arg;
+                                    rows_ = rows_arg;
+
+                                    cudaSafeCall( cudaMallocPitch( (void**)&data_, &step_, colsBytes_, rows_) );
+
+                                    //refcount = (int*)cv::fastMalloc(sizeof(*refcount));
+                                    refcount_ = new int;
+                                    *refcount_ = 1;
+                                }
+                                */
+                            }
 
                             /** \brief Decrements reference counter and releases internal buffer if needed. */
-                            void release();
+                            void release()
+                            {
+                                throw "Not implemented";
+                                /*
+                                if( refcount_ && CV_XADD(refcount_, -1) == 1 )
+                                {
+                                    //cv::fastFree(refcount);
+                                    delete refcount_;
+                                    cudaSafeCall( cudaFree(data_) );
+                                }
+
+                                colsBytes_ = 0;
+                                rows_ = 0;
+                                data_ = 0;
+                                step_ = 0;
+                                refcount_ = 0;
+                                */
+                            }
 
                             /** \brief Performs data copying. If destination size differs it will be reallocated.
                               * \param other_arg: destination container
                               * */
-                            void copyTo(DeviceMemory2D& other) const;
+                            void copyTo(DeviceMemory2D& /* other */) const
+                            {
+                                throw "Not implemented";
+                                /*
+                                if (empty())
+                                    other.release();
+                                else
+                                {
+                                    other.create(rows_, colsBytes_);
+                                    cudaSafeCall( cudaMemcpy2D(other.data_, other.step_, data_, step_, colsBytes_, rows_, cudaMemcpyDeviceToDevice) );
+                                }
+                                */
+                            }
 
                             /** \brief Uploads data to internal buffer in GPU memory. It calls create() inside to ensure that intenal buffer size is enough.
                               * \param host_ptr_arg: pointer to host buffer to upload
@@ -158,18 +236,42 @@ namespace cv
                               * \param rows_arg: number of rows to upload
                               * \param sizeBytes_arg: width of host buffer in bytes
                               * */
-                            void upload(const void *host_ptr_arg, size_t host_step_arg, int rows_arg, int colsBytes_arg);
+                            void upload(const void * /* host_ptr_arg */,
+                                        size_t /* host_step_arg */,
+                                        int /* rows_arg */,
+                                        int /* colsBytes_arg */)
+                            {
+                                throw "Not implemented";
+                                /*
+                                create(rows_arg, colsBytes_arg);
+                                cudaSafeCall( cudaMemcpy2D(data_, step_, host_ptr_arg, host_step_arg, colsBytes_, rows_, cudaMemcpyHostToDevice) );
+                                */
+                            }
 
                             /** \brief Downloads data from internal buffer to CPU memory. User is resposible for correct host buffer size.
                               * \param host_ptr_arg: pointer to host buffer to download
                               * \param host_step_arg: stride between two consecutive rows in bytes for host buffer
                               * */
-                            void download(void *host_ptr_arg, size_t host_step_arg) const;
+                            void download(void * /* host_ptr_arg */, size_t /* host_step_arg */) const
+                            {
+                                throw "Not implemented";
+                                /*
+                                cudaSafeCall( cudaMemcpy2D(host_ptr_arg, host_step_arg, data_, step_, colsBytes_, rows_, cudaMemcpyDeviceToHost) );
+                                */
+                            }
 
                             /** \brief Performs swap of data pointed with another device memory.
                               * \param other: device memory to swap with
                               * */
-                            void swap(DeviceMemory2D& other_arg);
+                            void swap(DeviceMemory2D& other_arg)
+                            {
+                                std::swap(data_, other_arg.data_);
+                                std::swap(step_, other_arg.step_);
+
+                                std::swap(colsBytes_, other_arg.colsBytes_);
+                                std::swap(rows_, other_arg.rows_);
+                                std::swap(refcount_, other_arg.refcount_);
+                            }
 
                             /** \brief Returns pointer to given row in internal buffer.
                               * \param y_arg: row index
@@ -188,16 +290,17 @@ namespace cv
                             template <class U> operator PtrStepSz<U>() const;
 
                             /** \brief Returns true if unallocated otherwise false. */
-                            bool empty() const;
+                            bool empty() const { return !data_; }
 
                             /** \brief Returns number of bytes in each row. */
-                            int colsBytes() const;
+                            int colsBytes() const { return colsBytes_; }
 
                             /** \brief Returns number of rows. */
-                            int rows() const;
+                            int rows() const { return rows_; }
 
                             /** \brief Returns stride between two consecutive rows in bytes for internal buffer. Step is stored always and everywhere in bytes!!! */
-                            size_t step() const;
+                            size_t step() const { return step_; }
+
                             private:
                             /** \brief Device pointer. */
                             void *data_;

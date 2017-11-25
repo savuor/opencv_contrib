@@ -3,7 +3,7 @@
 #include <opencv2/dynamicfusion/utils/knn_point_cloud.hpp>
 #include <opencv2/viz/vizcore.hpp>
 #include <numeric>
-#include <opencv2/dynamicfusion/cuda/precomp.hpp>
+#include "precomp.hpp"
 #include <algorithm>
 using namespace cv::kfusion;
 using namespace cv::kfusion::cuda;

@@ -54,6 +54,22 @@
 
 namespace cv
 {
+
+template<> class DataType<unsigned int>
+{
+public:
+    typedef unsigned int value_type;
+    typedef value_type  work_type;
+    typedef value_type  channel_type;
+    typedef value_type  vec_type;
+    enum { generic_type = 0,
+           depth        = CV_32S,
+           channels     = 1,
+           fmt          = (int)'u',
+           type         = CV_MAKETYPE(depth, channels)
+         };
+};
+
 namespace bgsegm
 {
 

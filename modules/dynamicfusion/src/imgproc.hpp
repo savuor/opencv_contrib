@@ -18,7 +18,7 @@ namespace cv
 
              void computePointNormals(const Intr& intr, const Depth& depth, Cloud& points, Normals& normals);
 
-             void computeDists(const Depth& depth, Dists& dists, const Intr& intr);
+             void computeDists(const UMat depth, UMat dists, const Intr& intr);
 
              void cloudToDepth(const Cloud& cloud, Depth& depth);
 

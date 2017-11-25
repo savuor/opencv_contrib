@@ -1,5 +1,4 @@
-#include <opencv2/dynamicfusion/cuda/precomp.hpp>
-
+#include "precomp.hpp"
 
 using namespace cv::kfusion;
 using namespace std;
@@ -17,9 +16,9 @@ kfusion::device::ComputeIcpHelper::ComputeIcpHelper(float dist_thres, float angl
 void kfusion::device::ComputeIcpHelper::setLevelIntr(int level_index, float fx, float fy, float cx, float cy)
 {
     int div = 1 << level_index;
-    f = make_float2(fx/div, fy/div);
-    c = make_float2(cx/div, cy/div);
-    finv = make_float2(1.f/f.x, 1.f/f.y);
+    f = float2(fx/div, fy/div);
+    c = float2(cx/div, cy/div);
+    finv = float2(1.f/f.x, 1.f/f.y);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -34,14 +33,16 @@ struct kfusion::cuda::ProjectiveICP::StreamHelper
     cudaStream_t stream;
     PageLockHelper locked_buffer;
 
-    StreamHelper() { cudaSafeCall( cudaStreamCreate(&stream) ); }
-    ~StreamHelper() { cudaSafeCall( cudaStreamDestroy(stream) ); }
+    StreamHelper() { throw "Not implemented";  /* cudaSafeCall( cudaStreamCreate(&stream) ); */}
+    ~StreamHelper() { throw "Not implemented"; /* cudaSafeCall( cudaStreamDestroy(stream) ); */}
 
     operator float*() { return locked_buffer.data; }
     operator cudaStream_t() { return stream; }
 
-    Mat6f get(Vec6f& b)
+    Mat6f get(Vec6f& /* b */)
     {
+        throw "Not implemented";
+        /*
         cudaSafeCall( cudaStreamSynchronize(stream) );
 
         Mat6f A;
@@ -59,6 +60,7 @@ struct kfusion::cuda::ProjectiveICP::StreamHelper
                     data_A[j * 6 + i] = data_A[i * 6 + j] = value;
             }
         return A;
+        */
     }
 };
 

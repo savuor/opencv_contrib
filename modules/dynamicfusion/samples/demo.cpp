@@ -2,7 +2,7 @@
 #include <opencv2/highgui/highgui_c.h>
 #include <opencv2/highgui.hpp>
 #include <opencv2/dynamicfusion.hpp>
-#include <opencv2/dynamicfusion/cuda/device_array.hpp>
+
 using namespace cv;
 struct DynamicFusionApp
 {
@@ -47,8 +47,7 @@ struct DynamicFusionApp
         else
             kinfu.renderImage(view_device_, mode);
 
-        view_host_.create(view_device_.rows(), view_device_.cols(), CV_8UC4);
-        view_device_.download(view_host_.ptr<void>(), view_host_.step);
+        view_device_.copyTo(view_host_);
         viz::imshow("Scene", view_host_);
     }
 
@@ -75,7 +74,7 @@ struct DynamicFusionApp
         for (int i = 0; i < depths.size() && !exit_ && !viz.wasStopped(); i++) {
             image = imread(images[i], CV_LOAD_IMAGE_COLOR);
             depth = imread(depths[i], CV_LOAD_IMAGE_ANYDEPTH);
-            depth_device_.upload(depth.data, depth.step, depth.rows, depth.cols);
+            depth.copyTo(depth_device_);
 
             {
                 kfusion::SampledScopeTime fps(time_ms);
@@ -128,10 +127,8 @@ struct DynamicFusionApp
     viz::Viz3d viz1;
 
     Mat view_host_;
-    kfusion::cuda::Image view_device_;
-    kfusion::cuda::Depth depth_device_;
-
-
+    UMat view_device_;
+    UMat depth_device_;
 };
 
 
@@ -139,12 +136,24 @@ struct DynamicFusionApp
 
 int main (int argc, char* argv[])
 {
-    int device = 0;
-    kfusion::cuda::setDevice (device);
-    kfusion::cuda::printShortCudaDeviceInfo(device);
+//    int device = 0;
+//    kfusion::cuda::setDevice (device);
+//    kfusion::cuda::printShortCudaDeviceInfo(device);
 
-    if(kfusion::cuda::checkIfPreFermiGPU(device))
-        return std::cout << std::endl << "Kinfu is not supported for pre-Fermi GPU architectures, and not built for them by default. Exiting..." << std::endl, -1;
+    /*
+            bool checkIfPreFermiGPU(int device)
+            {
+              if (device < 0)
+                cudaSafeCall( cudaGetDevice(&device) );
+
+              cudaDeviceProp prop;
+              cudaSafeCall( cudaGetDeviceProperties(&prop, device) );
+              return prop.major < 2; // CC == 1.x
+            }
+*/
+
+//    if(kfusion::cuda::checkIfPreFermiGPU(device))
+//        return std::cout << std::endl << "Kinfu is not supported for pre-Fermi GPU architectures, and not built for them by default. Exiting..." << std::endl, -1;
 
     DynamicFusionApp *app;
     app = new DynamicFusionApp(argv[1]);

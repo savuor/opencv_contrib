@@ -2,6 +2,44 @@
 
 #include "device_array.hpp"
 #include "safe_call.hpp"
+
+struct float2
+{
+    float2() {}
+    float2(float _x, float _y) : x(_x), y(_y) { }
+    float x, y;
+};
+struct float3
+{
+    float3() {}
+    float3(float _x, float _y, float _z) : x(_x), y(_y), z(_z) { }
+    float x, y, z;
+};
+struct float4
+{
+    float4() {}
+    float4(float _x, float _y, float _z, float _w) : x(_x), y(_y), z(_z), w(_w) { }
+    float x, y, z, w;
+};
+struct uchar4
+{
+    uchar4() {}
+    uchar4(uchar _x, uchar _y, uchar _z, uchar _w) : x(_x), y(_y), z(_z), w(_w) { }
+    uchar x, y, z, w;
+};
+struct int3
+{
+    int3() {}
+    int3(int _x, int _y, int _z) : x(_x), y(_y), z(_z) { }
+    int x, y, z;
+};
+struct ushort2
+{
+    ushort2() {}
+    ushort2(ushort _x, ushort _y) : x(_x), y(_y) { }
+    ushort x, y;
+};
+
 //#define USE_DEPTH
 namespace cv {
     namespace kfusion {
@@ -28,7 +66,8 @@ namespace cv {
                 Vec3f t;
             };
 
-            struct TsdfVolume {
+            struct TsdfVolume
+            {
             public:
                 typedef ushort2 elem_type;
 
@@ -38,28 +77,30 @@ namespace cv {
                 const float trunc_dist;
                 const int max_weight;
 
-                TsdfVolume(elem_type *data, int3 dims, float3 voxel_size, float trunc_dist, int max_weight);
+                TsdfVolume(elem_type* _data, int3 _dims, float3 _voxel_size, float _trunc_dist, int _max_weight)
+                : data(_data), dims(_dims), voxel_size(_voxel_size), trunc_dist(_trunc_dist), max_weight(_max_weight) { }
+
+                //elem_type* operator()(int x, int y, int z)
+                //{ return data + x + y*dims.x + z*dims.y*dims.x; }
+                //
+                //const elem_type* operator() (int x, int y, int z) const
+                //{ return data + x + y*dims.x + z*dims.y*dims.x; }
+                //
+                //elem_type* beg(int x, int y) const
+                //{ return data + x + dims.x * y; }
+                //
+                //elem_type* zstep(elem_type *const ptr) const
+                //{ return data + dims.x * dims.y; }
+
                 //TsdfVolume(const TsdfVolume&);
 
-                __kf_device__ elem_type
-                *
+                __kf_device__ elem_type* operator()(int x, int y, int z);
 
-                operator()(int x, int y, int z);
+                __kf_device__ const elem_type* operator()(int x, int y, int z) const;
 
-                __kf_device__ const elem_type
-                *
+                __kf_device__ elem_type* beg(int x, int y) const;
 
-                operator()(int x, int y, int z) const;
-
-                __kf_device__ elem_type
-                *
-
-                beg(int x, int y) const;
-
-                __kf_device__ elem_type
-                *
-                zstep(elem_type
-                *const ptr) const;
+                __kf_device__ elem_type* zstep(elem_type*const ptr) const;
             private:
                 TsdfVolume &operator=(const TsdfVolume &);
             };
@@ -69,22 +110,32 @@ namespace cv {
 
                 Projector() {}
 
-                Projector(float fx, float fy, float cx, float cy);
+                Projector(float fx, float fy, float cx, float cy) : f(float2(fx, fy)), c(float2(cx, cy)) {}
 
-                __kf_device__ float2
-
-                operator()(const float3 &p) const;
+                //float2 operator()(const float3& p) const
+                //{
+                //  float2 coo;
+                //  coo.x = p.x * f.x / p.z + c.x;
+                //  coo.y = p.y * f.y / p.z + c.y;
+                //  return coo;
+                //}
+                __kf_device__ float2 operator()(const float3 &p) const;
             };
 
             struct Reprojector {
                 Reprojector() {}
 
-                Reprojector(float fx, float fy, float cx, float cy);
+                Reprojector(float fx, float fy, float cx, float cy) : finv(1.f/fx, 1.f/fy), c(cx, cy) {}
+
+                //float3 operator()(int u, int v, float z) const
+                //{
+                //  float x = z * (u - c.x) * finv.x;
+                //  float y = z * (v - c.y) * finv.y;
+                //  return make_float3(x, y, z);
+                //}
 
                 float2 finv, c;
-                __kf_device__ float3
-
-                operator()(int x, int y, float z) const;
+                __kf_device__ float3 operator()(int x, int y, float z) const;
             };
 
             struct ComputeIcpHelper {

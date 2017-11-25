@@ -1,12 +1,12 @@
-#include <opencv2/dynamicfusion/cuda/precomp.hpp>
-#include <opencv2/dynamicfusion/cuda/internal.hpp>
+#include "precomp.hpp"
+#include "internal.hpp"
 #include <tgmath.h>
 #include <opencv2/dynamicfusion/utils/dual_quaternion.hpp>
-#include <nanoflann/nanoflann.hpp>
+#include "nanoflann.hpp"
 #include <opencv2/dynamicfusion/utils/quaternion.hpp>
 #include <opencv2/dynamicfusion/utils/knn_point_cloud.hpp>
 #include <opencv2/dynamicfusion/warp_field.hpp>
-#include <opencv2/dynamicfusion/cuda/tsdf_volume.hpp>
+#include "tsdf_volume.hpp"
 #include <opencv2/dynamicfusion/kinfu.hpp>
 static inline float deg2rad (float alpha) { return alpha * 0.017453293f; }
 
@@ -213,10 +213,13 @@ cv::kfusion::Affine3f cv::kfusion::KinFu::getCameraPose (int time) const
     return poses_[time];
 }
 
-bool cv::kfusion::KinFu::operator()(const cv::kfusion::cuda::Depth& depth, const cv::kfusion::cuda::Image& /*image*/)
+bool cv::kfusion::KinFu::operator()(const InputArray& _depth, const InputArray& /*image*/)
 {
     const KinFuParams& p = params_;
     const int LEVELS = icp_->getUsedLevelsNum();
+
+    UMat depth = _depth.getUMat();
+    CV_Assert(depth.type() == CV_16U);
 
     cv::kfusion::cuda::computeDists(depth, dists_, p.intr);
     cv::kfusion::cuda::depthBilateralFilter(depth, curr_.depth_pyr[0], p.bilateral_kernel_size, p.bilateral_sigma_spatial, p.bilateral_sigma_depth);
@@ -430,4 +433,17 @@ void cv::kfusion::KinFu::renderImage(cv::kfusion::cuda::Image& image, const Affi
         cv::kfusion::cuda::renderTangentColors(normals_, i2);
     }
 #undef PASS1
+}
+
+
+cv::kfusion::SampledScopeTime::~SampledScopeTime()
+{
+    static int i_ = 0;
+    time_ms_ += getTime ();
+    if (i_ % EACH == 0 && i_)
+    {
+        std::cout << "Average frame time = " << time_ms_ / EACH << "ms ( " << 1000.f * EACH / time_ms_ << "fps )" << std::endl;
+        time_ms_ = 0.0;
+    }
+    ++i_;
 }
