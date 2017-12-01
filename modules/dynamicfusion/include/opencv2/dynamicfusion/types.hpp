@@ -82,7 +82,7 @@ namespace cv
                         ~ScopeTime();
                 };
 
-        struct  SampledScopeTime
+        struct CV_EXPORTS SampledScopeTime
                 {
                         public:
                         enum { EACH = 33 };

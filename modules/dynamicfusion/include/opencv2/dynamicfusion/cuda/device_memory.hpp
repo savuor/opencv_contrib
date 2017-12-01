@@ -1,5 +1,12 @@
 #pragma once
 
+#if (defined _WIN32 || defined WINCE || defined __CYGWIN__) && defined CVAPI_EXPORTS
+#  define CV_EXPORTS __declspec(dllexport)
+#elif defined __GNUC__ && __GNUC__ >= 4
+#  define CV_EXPORTS __attribute__ ((visibility ("default")))
+#else
+#  define CV_EXPORTS
+#endif
 
 #include "kernel_containers.hpp"
 
@@ -108,7 +115,7 @@ namespace cv
               * \author Anatoly Baksheev
               */
 
-            class  DeviceMemory2D
+            class CV_EXPORTS DeviceMemory2D
                     {
                             public:
                             /** \brief Empty constructor. */

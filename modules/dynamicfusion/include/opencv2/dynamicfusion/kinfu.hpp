@@ -18,14 +18,14 @@ namespace cv
         namespace cuda
         {
             int getCudaEnabledDeviceCount();
-            void setDevice(int device);
+            CV_EXPORTS void setDevice(int device);
             std::string getDeviceName(int device);
-            bool checkIfPreFermiGPU(int device);
+            CV_EXPORTS bool checkIfPreFermiGPU(int device);
             void printCudaDeviceInfo(int device);
-            void printShortCudaDeviceInfo(int device);
+            CV_EXPORTS void printShortCudaDeviceInfo(int device);
         }
 
-        struct  KinFuParams
+        struct CV_EXPORTS KinFuParams
         {
             static KinFuParams default_params();
             static KinFuParams default_params_dynamicfusion();
@@ -59,7 +59,7 @@ namespace cv
 
         };
 
-        class  KinFu
+        class CV_EXPORTS KinFu
         {
         public:
             typedef cv::Ptr<KinFu> Ptr;

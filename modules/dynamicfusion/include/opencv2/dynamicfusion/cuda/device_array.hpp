@@ -116,7 +116,7 @@ namespace cv
           * \author Anatoly Baksheev
           */
         template<class T>
-        class  DeviceArray2D : public DeviceMemory2D
+        class CV_EXPORTS DeviceArray2D : public DeviceMemory2D
     {
         public:
         /** \brief Element type. */

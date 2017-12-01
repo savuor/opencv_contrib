@@ -45,7 +45,7 @@ namespace cv
             kfusion::utils::DualQuaternion<float> transform;
             float weight = 0;
         };
-        class WarpField
+        class CV_EXPORTS WarpField
         {
         public:
             WarpField();
