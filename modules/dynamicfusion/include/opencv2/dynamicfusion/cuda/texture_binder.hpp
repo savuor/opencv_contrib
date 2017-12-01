@@ -3,6 +3,8 @@
 #include "device_array.hpp"
 #include "safe_call.hpp"
 
+namespace cv {
+
 namespace kfusion
 {
     namespace cuda
@@ -57,4 +59,6 @@ namespace kfusion
     {
         using kfusion::cuda::TextureBinder;
     }
+}
+
 }

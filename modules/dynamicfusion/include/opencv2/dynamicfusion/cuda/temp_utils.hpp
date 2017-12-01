@@ -3,6 +3,8 @@
 #include "cuda.h"
 #include "kernel_containers.hpp"
 
+namespace cv {
+
 namespace kfusion
 {
     namespace device
@@ -603,4 +605,6 @@ namespace kfusion
             }
         };
     }
+}
+
 }

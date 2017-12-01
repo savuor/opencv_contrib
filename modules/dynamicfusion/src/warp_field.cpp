@@ -8,9 +8,10 @@
 #include <opencv2/dynamicfusion/optimisation.hpp>
 
 using namespace cv::kfusion;
+using namespace cv::kfusion::utils;
 using namespace cv;
-std::vector<utils::DualQuaternion<float>> neighbours; //THIS SHOULD BE SOMEWHERE ELSE BUT TOO SLOW TO REINITIALISE
-utils::PointCloud cloud;
+std::vector<DualQuaternion<float>> neighbours; //THIS SHOULD BE SOMEWHERE ELSE BUT TOO SLOW TO REINITIALISE
+PointCloud cloud;
 
 WarpField::WarpField()
 {
@@ -262,7 +263,7 @@ void WarpField::warp(std::vector<Vec3f>& points, std::vector<Vec3f>& normals) co
  * \param weight
  * \return
  */
-utils::DualQuaternion<float> WarpField::DQB(const Vec3f& vertex) const
+DualQuaternion<float> WarpField::DQB(const Vec3f& vertex) const
 {
     utils::DualQuaternion<float> quaternion_sum;
     for (size_t i = 0; i < KNN_NEIGHBOURS; i++)
@@ -282,7 +283,7 @@ utils::DualQuaternion<float> WarpField::DQB(const Vec3f& vertex) const
  * \param weight
  * \return
  */
-utils::DualQuaternion<float> WarpField::DQB(const Vec3f& vertex, double epsilon[KNN_NEIGHBOURS * 6]) const
+DualQuaternion<float> WarpField::DQB(const Vec3f& vertex, double epsilon[KNN_NEIGHBOURS * 6]) const
 {
     if(epsilon == NULL)
     {
