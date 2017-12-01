@@ -582,7 +582,7 @@ namespace kfusion
             {
 #if __CUDA_ARCH__ >= 200
                 (void)cta_buffer;
-                return __ballot(predicate);
+                return __ballot_sync((unsigned)-1, predicate);
 #else
                 int tid = Block::flattenedThreadId();
                 cta_buffer[tid] = predicate ? (1 << (tid & 31)) : 0;
@@ -594,7 +594,7 @@ namespace kfusion
             {
 #if __CUDA_ARCH__ >= 200
                 (void)cta_buffer;
-                return __all(predicate);
+                return __all_sync((unsigned)-1, predicate);
 #else
                 int tid = Block::flattenedThreadId();
                 cta_buffer[tid] = predicate ? 1 : 0;
