@@ -1,20 +1,6 @@
 set(the_description "Non-rigid 3D reconstruction")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -DFORCE_INLINERS -D_MWAITXINTRIN_H_INCLUDED")
-
-include(cmake/Utils.cmake)
-include(cmake/Targets.cmake)
 
 ocv_define_module(dynamicfusion opencv_core opencv_viz opencv_imgproc)
-
-ocv_warnings_disable(CMAKE_CXX_FLAGS
-        -Wundef
-        -Wshadow
-        -Wsign-compare
-        -Wmissing-declarations
-        -Wunused-but-set-variable
-        -Wunused-parameter
-        -Wunused-function
-        )
 
 find_package(Ceres QUIET)
 
