@@ -3,6 +3,8 @@
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Depth bilateral filter
+namespace cv
+{
 
 namespace kfusion
 {
@@ -619,4 +621,6 @@ void kfusion::device::mergePointNormal (const DeviceArray<Point>& cloud, const D
     mergePointNormalKernel<<<divUp (total, block), block>>>(cloud, normals, output);
     cudaSafeCall ( cudaGetLastError () );
     cudaSafeCall (cudaDeviceSynchronize ());
+}
+
 }

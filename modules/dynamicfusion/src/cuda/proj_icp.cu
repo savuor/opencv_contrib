@@ -1,6 +1,8 @@
 #include <opencv2/dynamicfusion/cuda/device.hpp>
 #include <opencv2/dynamicfusion/cuda/texture_binder.hpp>
 
+namespace cv
+{
 
 namespace kfusion
 {
@@ -474,3 +476,5 @@ kfusion::device::ComputeIcpHelper::PageLockHelper::PageLockHelper() : data(0)
 
 kfusion::device::ComputeIcpHelper::PageLockHelper::~PageLockHelper()
 {   cudaSafeCall( cudaFreeHost(data) ); data = 0; }
+
+}
