@@ -1,5 +1,6 @@
 #pragma once
 
+#include "cuda_fp16.h"
 #include "internal.hpp"
 #include "temp_utils.hpp"
 
