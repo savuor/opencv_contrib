@@ -90,11 +90,77 @@ struct RenderInvoker : ParallelLoopBody
     float depthFactor;
 };
 
+template<class Scene>
+struct RenderColorInvoker : ParallelLoopBody
+{
+    RenderColorInvoker(Mat_<Vec3f>& _frame, Affine3f _pose,
+        Reprojector _reproj,
+        float _depthFactor) : ParallelLoopBody(),
+        frame(_frame),
+        pose(_pose),
+        reproj(_reproj),
+        depthFactor(_depthFactor)
+    { }
+
+    virtual void operator ()(const cv::Range& r) const
+    {
+        for (int y = r.start; y < r.end; y++)
+        {
+            Vec3f* frameRow = frame[y];
+            for (int x = 0; x < frame.cols; x++)
+            {
+                Vec3f pix = 0;
+
+                Point3f orig = pose.translation();
+                // direction through pixel
+                Point3f screenVec = reproj(Point3f((float)x, (float)y, 1.f));
+                float xyt = 1.f / (screenVec.x * screenVec.x +
+                    screenVec.y * screenVec.y + 1.f);
+                Point3f dir = normalize(Vec3f(pose.rotation() * screenVec));
+                // screen space axis
+                dir.y = -dir.y;
+
+                const float maxDepth = 20.f;
+                const float maxSteps = 256;
+                float t = 0.f;
+                for (int step = 0; step < maxSteps && t < maxDepth; step++)
+                {
+                    Point3f p = orig + dir * t;
+                    float d = Scene::map(p);
+                    if (d < 0.000001f)
+                    {
+                        float m = 0.25f;
+                        float p0 = float(abs(fmod(p.x, m)) > m/2.f);
+                        float p1 = float(abs(fmod(p.y, m)) > m/2.f);
+                        float p2 = float(abs(fmod(p.z, m)) > m/2.f);
+
+                        pix[0] = p0 + p1;
+                        pix[1] = p1 + p2;
+                        pix[2] = p0 + p2;
+
+                        pix *= 128.f;
+                        break;
+                    }
+                    t += d;
+                }
+
+                frameRow[x] = pix;
+            }
+        }
+    }
+
+    Mat_<Vec3f>& frame;
+    Affine3f pose;
+    Reprojector reproj;
+    float depthFactor;
+};
+
 struct Scene
 {
     virtual ~Scene() {}
     static Ptr<Scene> create(int nScene, Size sz, Matx33f _intr, float _depthFactor);
     virtual Mat depth(Affine3f pose) = 0;
+    virtual Mat rgb(Affine3f pose) = 0;
     virtual std::vector<Affine3f> getPoses() = 0;
 };
 
@@ -140,6 +206,17 @@ struct CubeSpheresScene : Scene
 
         Range range(0, frame.rows);
         parallel_for_(range, RenderInvoker<CubeSpheresScene>(frame, pose, reproj, depthFactor));
+
+        return std::move(frame);
+    }
+
+    Mat rgb(Affine3f pose) override
+    {
+        Mat_<Vec3f> frame(frameSize);
+        Reprojector reproj(intr);
+
+        Range range(0, frame.rows);
+        parallel_for_(range, RenderColorInvoker<CubeSpheresScene>(frame, pose, reproj, depthFactor));
 
         return std::move(frame);
     }
@@ -240,6 +317,17 @@ struct RotatingScene : Scene
         return std::move(frame);
     }
 
+    Mat rgb(Affine3f pose) override
+    {
+        Mat_<Vec3f> frame(frameSize);
+        Reprojector reproj(intr);
+
+        Range range(0, frame.rows);
+        parallel_for_(range, RenderColorInvoker<RotatingScene>(frame, pose, reproj, depthFactor));
+
+        return std::move(frame);
+    }
+
     std::vector<Affine3f> getPoses() override
     {
         std::vector<Affine3f> poses;
@@ -320,7 +408,7 @@ static inline void CheckFrequency(Mat image)
     ASSERT_LT(float(cc4) / all, 0.2);
 }
 
-static const bool display = false;
+static const bool display = true;
 
 void flyTest(bool hiDense, bool test_colors)
 {
@@ -338,7 +426,8 @@ void flyTest(bool hiDense, bool test_colors)
         pose = poses[i];
 
         Mat depth = scene->depth(pose);
-        Mat rgb = creareRGBframe(depth.size());
+        //DEBUG
+        Mat rgb = scene->rgb(pose);// creareRGBframe(depth.size());
 
         ASSERT_TRUE(kf->update(depth, rgb));
 
@@ -351,7 +440,7 @@ void flyTest(bool hiDense, bool test_colors)
         if(display)
         {
             imshow("depth", depth*(1.f/params->depthFactor/4.f));
-            imshow("rgb", rgb);
+            imshow("rgb", rgb*(1.f/255.f));
             Mat rendered;
             kf->render(rendered);
             imshow("render", rendered);
